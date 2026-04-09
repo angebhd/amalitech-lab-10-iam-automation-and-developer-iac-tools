@@ -78,7 +78,6 @@ Resources:
   UserTemporaryPassword:
     Type: 'AWS::SecretsManager::Secret'
     Properties:
-      Name: 'UserTemporaryPassword'
       Description: 'Temporary password for IAM users'
       GenerateSecretString:
         SecretStringTemplate: '{}'
