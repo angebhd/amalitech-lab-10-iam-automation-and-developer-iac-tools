@@ -1,5 +1,5 @@
-AWSTEMPLATEFORMATVERSION: '2010-09-09'
-Description: 'Create IAM users, groups, and policies for some services (s3, ec2).'
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Create IAM users, groups, and policies for some services (s3, ec2) with console access and secrets management.'
 
 Resources:
   #--------------------
@@ -31,25 +31,9 @@ Resources:
           - Effect: 'Allow'
             Action:
               - 'ec2:DescribeInstances'
-              - 'ec2:CreateInstance'
-            Resource: '*'
-  # -----------------------
-  # EC2-user exception (Kinda useless :| )
-  # -----------------------
-  ec2User2Policy:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: 'EC2User2AccessPolicy'
-      Users:
-        - Ref: ec2User2
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: 'Allow'
-            Action:
               - 'ec2:RunInstances'
             Resource: '*'
-  
+
   s3GroupPolicy:
     Type: 'AWS::IAM::Policy'
     Properties:
@@ -61,13 +45,17 @@ Resources:
         Statement:
           - Effect: 'Allow'
             Action:
+              - 's3:ListAllMyBuckets'
               - 's3:ListBucket'
+              - 's3:GetBucketLocation'
             Resource: '*'
 
-  consoleAccessPolicy:
+  # Policy allowing users to change their own password
+  # This is required for PasswordResetRequired: true to work properly
+  passwordChangePolicy:
     Type: 'AWS::IAM::Policy'
     Properties:
-      PolicyName: 'ConsoleAccessPolicy'
+      PolicyName: 'PasswordChangePolicy'
       Groups:
         - Ref: ec2Group
         - Ref: s3Group
@@ -76,8 +64,12 @@ Resources:
         Statement:
           - Effect: 'Allow'
             Action:
-              - 'iam:CreateLoginProfile'
-              - 'iam:DeleteLoginProfile'
+              - 'iam:ChangePassword'
+              - 'iam:GetAccountPasswordPolicy'
+            Resource: 'arn:aws:iam::*:user/${aws:username}'
+          - Effect: 'Allow'
+            Action:
+              - 'iam:ListUsers'
             Resource: '*'
 
   #--------------------
@@ -104,6 +96,9 @@ Resources:
       UserName: 'ec2-user1'
       Groups:
         - Ref: ec2Group
+      LoginProfile:
+        Password: !Sub '{{resolve:secretsmanager:${UserTemporaryPassword}:SecretString:password}}'
+        PasswordResetRequired: true
 
   ec2User2:
     Type: 'AWS::IAM::User'
@@ -111,6 +106,18 @@ Resources:
       UserName: 'ec2-user2'
       Groups:
         - Ref: ec2Group
+      LoginProfile:
+        Password: !Sub '{{resolve:secretsmanager:${UserTemporaryPassword}:SecretString:password}}'
+        PasswordResetRequired: true
+      Policies:
+        - PolicyName: 'DenyRunInstances'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Deny'
+                Action:
+                  - 'ec2:RunInstances'
+                Resource: '*'
   
   s3User:
     Type: 'AWS::IAM::User'
@@ -118,3 +125,6 @@ Resources:
       UserName: 's3-user'
       Groups:
         - Ref: s3Group
+      LoginProfile:
+        Password: !Sub '{{resolve:secretsmanager:${UserTemporaryPassword}:SecretString:password}}'
+        PasswordResetRequired: true
