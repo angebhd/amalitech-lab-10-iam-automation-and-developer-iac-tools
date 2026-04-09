@@ -1,5 +1,5 @@
 {
-  "template-file-path": "iam-template.yaml",
+  "templateFilePath": "iam-template.yaml",
   "parameters": {},
   "tags": {}
 }
