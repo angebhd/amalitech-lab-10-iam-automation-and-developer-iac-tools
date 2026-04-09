@@ -1,0 +1,120 @@
+AWSTEMPLATEFORMATVERSION: '2010-09-09'
+Description: 'Create IAM users, groups, and policies for some services (s3, ec2).'
+
+Resources:
+  #--------------------
+  # Groups
+  #--------------------
+  ec2Group:
+    Type: 'AWS::IAM::Group'
+    Properties:
+      GroupName: 'EC2Users'
+  
+  s3Group:
+    Type: 'AWS::IAM::Group'
+    Properties:
+      GroupName: 'S3Users'
+  
+  #--------------------
+  # Group Policies
+  #--------------------
+
+  ec2GroupPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: 'EC2AccessPolicy'
+      Groups:
+        - Ref: ec2Group
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Action:
+              - 'ec2:DescribeInstances'
+              - 'ec2:CreateInstance'
+            Resource: '*'
+  # -----------------------
+  # EC2-user exception (Kinda useless :| )
+  # -----------------------
+  ec2User2Policy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: 'EC2User2AccessPolicy'
+      Users:
+        - Ref: ec2User2
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Action:
+              - 'ec2:RunInstances'
+            Resource: '*'
+  
+  s3GroupPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: 'S3AccessPolicy'
+      Groups:
+        - Ref: s3Group
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Action:
+              - 's3:ListBucket'
+            Resource: '*'
+
+  consoleAccessPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: 'ConsoleAccessPolicy'
+      Groups:
+        - Ref: ec2Group
+        - Ref: s3Group
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Action:
+              - 'iam:CreateLoginProfile'
+              - 'iam:DeleteLoginProfile'
+            Resource: '*'
+
+  #--------------------
+  # Temporary Password Secret
+  #--------------------
+  UserTemporaryPassword:
+    Type: 'AWS::SecretsManager::Secret'
+    Properties:
+      Name: 'UserTemporaryPassword'
+      Description: 'Temporary password for IAM users'
+      GenerateSecretString:
+        SecretStringTemplate: '{}'
+        GenerateStringKey: 'password'
+        PasswordLength: 16
+        ExcludeCharacters: '"@/\'
+      
+
+  #--------------------
+  # Users
+  #--------------------
+  ec2User1:
+    Type: 'AWS::IAM::User'
+    Properties:
+      UserName: 'ec2-user1'
+      Groups:
+        - Ref: ec2Group
+
+  ec2User2:
+    Type: 'AWS::IAM::User'
+    Properties:
+      UserName: 'ec2-user2'
+      Groups:
+        - Ref: ec2Group
+  
+  s3User:
+    Type: 'AWS::IAM::User'
+    Properties:
+      UserName: 's3-user'
+      Groups:
+        - Ref: s3Group
