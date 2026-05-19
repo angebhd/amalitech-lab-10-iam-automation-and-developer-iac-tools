@@ -127,3 +127,13 @@ Resources:
       LoginProfile:
         Password: !Sub '{{resolve:secretsmanager:${UserTemporaryPassword}:SecretString:password}}'
         PasswordResetRequired: true
+  
+  S3User2:
+    Type: 'AWS::IAM::User'
+    Properties:
+      UserName: 's3-user2'
+      Groups:
+        - Ref: s3Group
+      LoginProfile:
+        Password: !Sub '{{resolve:secretsmanager:${UserTemporaryPassword}:SecretString:password}}'
+        PasswordResetRequired: true
