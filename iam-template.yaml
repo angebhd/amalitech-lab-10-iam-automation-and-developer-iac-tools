@@ -50,6 +50,24 @@ Resources:
               - 's3:GetBucketLocation'
             Resource: '*'
 
+  # Permission boundary for ec2User2: caps effective permissions so RunInstances
+  # is excluded even though ec2Group grants it. Effective permissions =
+  # intersection of identity policies AND this boundary.
+  ec2User2PermissionBoundary:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: 'EC2User2PermissionBoundary'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Action:
+              - 'ec2:DescribeInstances'
+              - 'iam:ChangePassword'
+              - 'iam:GetAccountPasswordPolicy'
+              - 'iam:ListUsers'
+            Resource: '*'
+
   # Policy allowing users to change their own password
   # This is required for PasswordResetRequired: true to work properly
   passwordChangePolicy:
@@ -105,18 +123,10 @@ Resources:
       UserName: 'ec2-user2'
       Groups:
         - Ref: ec2Group
+      PermissionsBoundary: !Ref ec2User2PermissionBoundary
       LoginProfile:
         Password: !Sub '{{resolve:secretsmanager:${UserTemporaryPassword}:SecretString:password}}'
         PasswordResetRequired: true
-      Policies:
-        - PolicyName: 'DenyRunInstances'
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: 'Deny'
-                Action:
-                  - 'ec2:RunInstances'
-                Resource: '*'
   
   s3User:
     Type: 'AWS::IAM::User'
