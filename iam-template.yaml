@@ -50,7 +50,6 @@ Resources:
               - 's3:GetBucketLocation'
             Resource: '*'
 
-  #---------------------------------------------------------------------------
   # Permission boundary for ec2User2: caps effective permissions so RunInstances
   # is excluded even though ec2Group grants it. Effective permissions =
   # intersection of identity policies AND this boundary.
